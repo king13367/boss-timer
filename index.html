@@ -321,5 +321,123 @@ updateDisplay();
 setInterval(tick, 250);
 document.addEventListener("visibilitychange", tick);
 </script>
+<script>
+(() => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "작은 창으로 보기 (PiP)";
+  document.querySelector(".tools").append(button);
+
+  let pipWindow = null;
+
+  button.onclick = async () => {
+    if (!("documentPictureInPicture" in window)) {
+      alert("이 브라우저는 지원하지 않습니다. PC 최신 크롬에서 열어주세요.");
+      return;
+    }
+
+    if (pipWindow && !pipWindow.closed) {
+      pipWindow.focus();
+      return;
+    }
+
+    try {
+      pipWindow =
+        await window.documentPictureInPicture.requestWindow({
+          width: 360,
+          height: 440
+        });
+
+      const doc = pipWindow.document;
+      doc.documentElement.lang = "ko";
+      doc.title = "보스 타이머";
+
+      const style = doc.createElement("style");
+      style.textContent = `
+        body {
+          margin: 0;
+          padding: 14px;
+          background: #101522;
+          color: #eef2ff;
+          font-family: Arial, sans-serif;
+        }
+        h1 { font-size: 18px; margin: 0 0 12px; }
+        section {
+          padding: 14px;
+          margin-bottom: 10px;
+          border: 1px solid #35415c;
+          border-radius: 12px;
+          background: #1b2335;
+        }
+        h2 {
+          margin: 0;
+          font-size: 17px;
+          overflow-wrap: anywhere;
+        }
+        .count {
+          margin: 8px 0;
+          font-size: 38px;
+          font-weight: bold;
+          color: #9bb4ff;
+          font-variant-numeric: tabular-nums;
+        }
+        .soon .count { color: #ffd275; }
+        small { color: #aab5ce; line-height: 1.6; }
+        p { color: #aab5ce; }
+      `;
+      doc.head.append(style);
+
+      const title = doc.createElement("h1");
+      title.textContent = "🔔 보스 리셋 타이머";
+      const list = doc.createElement("div");
+      doc.body.append(title, list);
+
+      function refresh() {
+        list.replaceChildren();
+
+        const cards = document.querySelectorAll("#list .boss");
+        if (!cards.length) {
+          const empty = doc.createElement("p");
+          empty.textContent = "원래 페이지에서 보스를 등록해주세요.";
+          list.append(empty);
+          return;
+        }
+
+        cards.forEach(card => {
+          const item = doc.createElement("section");
+          item.classList.toggle("soon",
+            card.classList.contains("soon"));
+
+          ["h2", ".count", "small"].forEach(selector => {
+            const source = card.querySelector(selector);
+            if (source) item.append(source.cloneNode(true));
+          });
+
+          list.append(item);
+        });
+      }
+
+      refresh();
+
+      const observer = new MutationObserver(refresh);
+      observer.observe(document.getElementById("list"), {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["class"]
+      });
+
+      pipWindow.addEventListener("pagehide", () => {
+        observer.disconnect();
+        pipWindow = null;
+      }, { once: true });
+
+    } catch (error) {
+      alert("작은 창을 열지 못했습니다. 다시 눌러주세요.");
+    }
+  };
+})();
+</script>
 </body>
 </html>
