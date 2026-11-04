@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101522;color:#eef2ff;font-family:Arial,sans-serif}
-main{max-width:850px;margin:30px auto;padding:18px}
+main{max-width:900px;margin:28px auto;padding:18px}
 h1{font-size:26px;margin:0 0 10px}
 p,small{color:#aab5ce;line-height:1.6}
 .panel,.boss{background:#1b2335;border:1px solid #303c55;border-radius:14px;padding:18px;margin:16px 0}
@@ -21,15 +21,21 @@ button:hover{filter:brightness(1.1)}
 .secondary{background:#33415e;color:white}
 .danger{background:#593441;color:#ffccd6}
 .wide{grid-column:1/-1}
+.time-row{display:flex;gap:8px;align-items:center}
+.time-row input{flex:1;min-width:0}
+.time-row button{margin-top:7px;white-space:nowrap}
 .boss-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
 h2{margin:0;font-size:19px;overflow-wrap:anywhere}
 .count{font-size:44px;font-weight:bold;color:#9bb4ff;margin:12px 0;font-variant-numeric:tabular-nums}
 .soon .count{color:#ffd275}
 #message{color:#ffd275;line-height:1.6}
+#clock{font-variant-numeric:tabular-nums}
 #log{padding-left:20px;color:#bdc8df;line-height:1.8}
-@media(max-width:550px){
+@media(max-width:650px){
 form{grid-template-columns:1fr}
 main{margin:10px auto}
+.time-row{flex-wrap:wrap}
+.time-row input{flex-basis:100%}
 }
 </style>
 </head>
@@ -37,6 +43,7 @@ main{margin:10px auto}
 <main>
 <h1>🔔 보스 리셋 타이머</h1>
 <p>보스마다 10분~4시간 주기를 따로 설정하세요.</p>
+<p id="clock"></p>
 
 <div class="panel">
 <div class="tools">
@@ -60,7 +67,10 @@ PC 절전·탭 종료 시 알람이 울리지 않으며,
 </label>
 
 <label>첫 리셋 날짜와 시간
+<div class="time-row">
 <input id="start" type="datetime-local" step="1" required>
+<button id="useNow" type="button">현재시간 불러오기</button>
+</div>
 </label>
 
 <label>리셋 주기
@@ -70,9 +80,9 @@ PC 절전·탭 종료 시 알람이 울리지 않으며,
 <button type="submit">보스 타이머 등록</button>
 
 <small class="wide">
-시간은 현재 기기의 시간대를 따릅니다.
-과거 시간을 입력하면 해당 시각부터 선택한 주기로
-다음 리셋을 계산합니다.
+현재시간 불러오기는 버튼을 누른 순간의 기기 시간을 입력합니다.
+현재시간을 불러오고 20분 주기로 등록하면 20분 뒤가 다음 리셋입니다.
+과거 시간을 입력해도 해당 시각부터 선택한 주기로 계산합니다.
 </small>
 </form>
 
@@ -96,6 +106,9 @@ let audioContext = null;
 let pipWindow = null;
 let pipList = null;
 let lastTick = Date.now();
+let lastDisplaySecond = -1;
+let mainRows = new Map();
+let pipRows = new Map();
 const logs = [];
 const fired = new Map();
 
@@ -125,11 +138,16 @@ for (let minutes = 10; minutes <= 240; minutes += 10) {
 try {
   const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
   if (Array.isArray(saved)) {
-    bosses = saved.filter(b =>
-      b && typeof b.id === "string" &&
-      typeof b.name === "string" &&
-      Number.isFinite(b.start)
-    ).map(b => ({
+    const ids = new Set();
+    bosses = saved.filter(b => {
+      if (!b || typeof b.id !== "string" ||
+          typeof b.name !== "string" ||
+          !Number.isFinite(b.start) ||
+          !Number.isFinite(new Date(b.start).getTime()) ||
+          ids.has(b.id)) return false;
+      ids.add(b.id);
+      return true;
+    }).map(b => ({
       id: b.id,
       name: b.name,
       start: b.start,
@@ -164,6 +182,13 @@ function localInputTime(date) {
 }
 
 $("start").value = localInputTime(new Date());
+
+$("useNow").onclick = () => {
+  const now = new Date();
+  $("start").value = localInputTime(now);
+  $("message").textContent =
+    "현재시간을 입력했습니다. 주기를 선택하고 등록해주세요.";
+};
 
 function formatTime(time) {
   return new Date(time).toLocaleString("ko-KR", {
@@ -290,22 +315,21 @@ function announce(boss, ready, eventTime, now) {
   });
 }
 
-function renderList(container, compact, now) {
+function buildList(container, compact) {
   const doc = container.ownerDocument;
+  const rows = new Map();
   container.replaceChildren();
 
   if (!bosses.length) {
     const p = doc.createElement("p");
     p.textContent = "등록된 보스가 없습니다.";
     container.append(p);
-    return;
+    return rows;
   }
 
   bosses.forEach(boss => {
-    const next = nextReset(boss, now);
     const card = doc.createElement("section");
     card.className = "boss";
-    card.classList.toggle("soon", next - now <= 60000);
 
     const header = doc.createElement("div");
     header.className = "boss-head";
@@ -322,32 +346,51 @@ function renderList(container, compact, now) {
       remove.onclick = () => {
         bosses = bosses.filter(b => b.id !== boss.id);
         save();
-        updateDisplay();
+        rebuild();
       };
       header.append(remove);
     }
 
     const count = doc.createElement("div");
     count.className = "count";
-    count.textContent = countdown(next - now);
 
     const detail = doc.createElement("small");
-    detail.textContent = "다음 " + formatTime(next) +
-      " · " + periodLabel(boss.minutes) + " 주기";
-
     card.append(header, count, detail);
     container.append(card);
+
+    rows.set(boss.id, {card, count, detail});
+  });
+
+  return rows;
+}
+
+function updateRows(rows, now) {
+  bosses.forEach(boss => {
+    const row = rows.get(boss.id);
+    if (!row) return;
+    const next = nextReset(boss, now);
+    row.count.textContent = countdown(next - now);
+    row.detail.textContent = "다음 " + formatTime(next) +
+      " · " + periodLabel(boss.minutes) + " 주기";
+    row.card.classList.toggle("soon", next - now <= 60000);
   });
 }
 
-let lastDisplay = 0;
-
 function updateDisplay(now = Date.now()) {
-  renderList($("list"), false, now);
-  if (pipWindow && !pipWindow.closed && pipList) {
-    renderList(pipList, true, now);
+  $("clock").textContent = "현재시간 · " + formatTime(now);
+  updateRows(mainRows, now);
+  if (pipWindow && !pipWindow.closed) {
+    updateRows(pipRows, now);
   }
-  lastDisplay = now;
+  lastDisplaySecond = Math.floor(now / 1000);
+}
+
+function rebuild() {
+  mainRows = buildList($("list"), false);
+  if (pipWindow && !pipWindow.closed && pipList) {
+    pipRows = buildList(pipList, true);
+  }
+  updateDisplay();
 }
 
 $("form").onsubmit = event => {
@@ -376,7 +419,7 @@ $("form").onsubmit = event => {
   }
 
   $("name").value = "";
-  updateDisplay();
+  rebuild();
 };
 
 function tick() {
@@ -407,7 +450,7 @@ function tick() {
   }
 
   lastTick = now;
-  if (Math.floor(now / 1000) !== Math.floor(lastDisplay / 1000)) {
+  if (Math.floor(now / 1000) !== lastDisplaySecond) {
     updateDisplay(now);
   }
 }
@@ -447,9 +490,6 @@ $("pip").onclick = async () => {
         background:#1b2335;border:1px solid #303c55;
         border-radius:10px;padding:10px;margin:0 0 8px
       }
-      .boss-head{
-        display:flex;justify-content:space-between;gap:8px
-      }
       h2{font-size:16px;margin:0;overflow-wrap:anywhere}
       .count{
         font-size:32px;font-weight:bold;color:#9bb4ff;
@@ -465,22 +505,26 @@ $("pip").onclick = async () => {
     title.textContent = "🔔 보스 리셋 타이머";
     pipList = doc.createElement("div");
     doc.body.append(title, pipList);
+    pipRows = buildList(pipList, true);
 
     win.addEventListener("pagehide", () => {
       if (pipWindow === win) {
         pipWindow = null;
         pipList = null;
+        pipRows = new Map();
       }
     }, {once:true});
 
     updateDisplay();
   } catch {
-    $("message").textContent = "작은 창을 열지 못했습니다. 다시 눌러주세요.";
+    $("message").textContent =
+      "작은 창을 열지 못했습니다. 다시 눌러주세요.";
   }
 };
 
-updateDisplay();
+rebuild();
 setInterval(tick, 250);
+
 document.addEventListener("visibilitychange", () => {
   tick();
   updateDisplay();
