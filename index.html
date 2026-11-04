@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>보스 리셋 알람</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101522;color:#eef2ff;font-family:Arial,sans-serif}
+main{max-width:850px;margin:40px auto;padding:20px}
+h1{margin-bottom:8px}
+p,small{color:#aab5ce;line-height:1.7}
+.panel,.boss{background:#1b2335;border:1px solid #303c55;border-radius:16px;padding:22px;margin:18px 0}
+form{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+label{display:block;color:#bdc8df;font-size:14px}
+input,button{font:inherit;border-radius:9px;padding:12px}
+input{width:100%;margin-top:8px;background:#111827;color:white;border:1px solid #42506b}
+button{border:0;background:#7c9cff;color:#101522;cursor:pointer;font-weight:bold}
+button:hover{filter:brightness(1.1)}
+.tools{display:flex;flex-wrap:wrap;gap:10px}
+.secondary{background:#33415e;color:white}
+.danger{background:#593441;color:#ffccd6}
+.wide{grid-column:1/-1}
+.boss-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h2{margin:0;font-size:21px;overflow-wrap:anywhere}
+.count{font-size:48px;font-weight:bold;color:#9bb4ff;margin:18px 0;font-variant-numeric:tabular-nums}
+.soon .count{color:#ffd275}
+#message{color:#ffd275;min-height:26px}
+#log{padding-left:20px;color:#bdc8df;line-height:1.8}
+@media(max-width:550px){form{grid-template-columns:1fr}main{margin:10px auto}.count{font-size:40px}}
+</style>
+</head>
+<body>
+<main>
+<h1>🔔 보스 리셋 알람</h1>
+<p>첫 리셋 시간을 기준으로 20분마다 반복합니다.</p>
+
+<div class="panel">
+<div class="tools">
+<button id="enable" type="button">알람 켜기 / 소리 테스트</button>
+<button id="mute" class="secondary" type="button">소리 끄기</button>
+<button id="notify" class="secondary" type="button">브라우저 알림 허용</button>
+</div>
+<p id="status">소리 알람 꺼짐 · 알람 켜기 버튼을 눌러주세요.</p>
+<small>게임 중에도 이 페이지를 열어두세요. 탭 종료·PC 절전 시 알람이 울리지 않으며, 백그라운드에서는 알림이 늦어질 수 있습니다.</small>
+</div>
+
+<form id="form" class="panel">
+<label>보스 이름
+<input id="name" placeholder="예: 보스 1" maxlength="40" required>
+</label>
+<label>첫 리셋 날짜와 시간
+<input id="start" type="datetime-local" step="1" required>
+</label>
+<button class="wide" type="submit">보스 타이머 등록</button>
+<small class="wide">시간은 현재 기기의 시간대를 따릅니다. 과거 시간을 입력해도 해당 시각부터 20분 간격으로 다음 리셋을 계산합니다.</small>
+</form>
+
+<div id="message" role="status"></div>
+<div id="list"></div>
+<div class="panel">
+<strong>최근 알림</strong>
+<ul id="log"><li>아직 알림이 없습니다.</li></ul>
+</div>
+</main>
+
+<script>
+"use strict";
+const PERIOD = 20 * 60 * 1000;
+const KEY = "boss-reset-timers-v1";
+const $ = id => document.getElementById(id);
+let bosses = [];
+let soundOn = false;
+let audioContext;
+let lastTick = Date.now();
+const fired = new Set();
+const logs = [];
+
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
+  if (Array.isArray(saved)) {
+    bosses = saved.filter(b =>
+      b && typeof b.id === "string" &&
+      typeof b.name === "string" &&
+      Number.isFinite(b.start)
+    );
+  }
+} catch {
+  $("message").textContent = "저장 정보를 불러오지 못했습니다. 다시 등록해주세요.";
+}
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(bosses));
+  } catch {
+    $("message").textContent = "설정을 저장하지 못했습니다. 페이지를 닫으면 등록 정보가 사라질 수 있습니다.";
+  }
+}
+
+function localInputTime(date) {
+  const pad = n => String(n).padStart(2, "0");
+  return date.getFullYear() + "-" +
+    pad(date.getMonth() + 1) + "-" + pad(date.getDate()) +
+    "T" + pad(date.getHours()) + ":" + pad(date.getMinutes()) +
+    ":" + pad(date.getSeconds());
+}
+$("start").value = localInputTime(new Date());
+
+function formatTime(time) {
+  return new Date(time).toLocaleString("ko-KR", {
+    month:"numeric", day:"numeric",
+    hour:"2-digit", minute:"2-digit", second:"2-digit",
+    hour12:false
+  });
+}
+
+function nextReset(boss, now) {
+  if (now < boss.start) return boss.start;
+  return boss.start +
+    (Math.floor((now - boss.start) / PERIOD) + 1) * PERIOD;
+}
+
+function beep(ready) {
+  if (!soundOn || !audioContext ||
+      audioContext.state !== "running") return;
+  const count = ready ? 2 : 4;
+  for (let i = 0; i < count; i++) {
+    const start = audioContext.currentTime + i * 0.3;
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.frequency.value = ready ? 660 : 880;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.25);
+  }
+}
+
+$("enable").onclick = async () => {
+  try {
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) throw new Error("unsupported");
+    if (!audioContext) audioContext = new Audio();
+    await audioContext.resume();
+    soundOn = audioContext.state === "running";
+    $("status").textContent = soundOn
+      ? "소리 알람 켜짐 · 1분 전과 리셋 시각에 울립니다."
+      : "소리가 활성화되지 않았습니다. 버튼을 다시 눌러주세요.";
+    beep(false);
+  } catch {
+    $("status").textContent = "소리를 켜지 못했습니다. 브라우저의 소리 설정을 확인해주세요.";
+  }
+};
+
+$("mute").onclick = () => {
+  soundOn = false;
+  $("status").textContent = "소리 알람 꺼짐";
+};
+
+$("notify").onclick = async () => {
+  if (!("Notification" in window)) {
+    $("message").textContent = "이 브라우저는 알림을 지원하지 않습니다.";
+    return;
+  }
+  try {
+    const permission = await Notification.requestPermission();
+    $("message").textContent = permission === "granted"
+      ? "브라우저 알림이 허용되었습니다."
+      : "알림이 허용되지 않았습니다. 브라우저 사이트 설정에서 변경할 수 있습니다.";
+  } catch {
+    $("message").textContent = "브라우저 알림을 켜지 못했습니다.";
+  }
+};
+
+function announce(boss, ready, eventTime, now) {
+  const text = boss.name + (ready ? " · 리셋 1분 전!" : " · 리셋 시간!");
+  const delay = now - eventTime;
+  const message = text + (delay > 5000 ? " (지연 알림)" : "");
+  $("message").textContent = message;
+  beep(ready);
+
+  if ("Notification" in window &&
+      Notification.permission === "granted") {
+    try {
+      new Notification(message, {
+        body: "예정 시각: " + formatTime(eventTime),
+        tag: boss.id + "-" + eventTime + "-" + ready
+      });
+    } catch {}
+  }
+
+  logs.unshift(formatTime(now) + " — " + message);
+  logs.splice(10);
+  $("log").replaceChildren();
+  logs.forEach(text => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    $("log").append(li);
+  });
+}
+
+function render() {
+  $("list").replaceChildren();
+  if (!bosses.length) {
+    const p = document.createElement("p");
+    p.textContent = "등록된 보스가 없습니다. 위에서 추가해주세요.";
+    $("list").append(p);
+    return;
+  }
+
+  bosses.forEach(boss => {
+    const card = document.createElement("section");
+    card.className = "boss";
+
+    const header = document.createElement("div");
+    header.className = "boss-head";
+
+    const title = document.createElement("h2");
+    title.textContent = boss.name;
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger";
+    remove.textContent = "삭제";
+    remove.onclick = () => {
+      bosses = bosses.filter(b => b.id !== boss.id);
+      save();
+      render();
+      updateDisplay();
+    };
+
+    const count = document.createElement("div");
+    count.className = "count";
+
+    const detail = document.createElement("small");
+    header.append(title, remove);
+    card.append(header, count, detail);
+    $("list").append(card);
+    boss.elements = {card, count, detail};
+  });
+}
+
+function updateDisplay() {
+  const now = Date.now();
+  bosses.forEach(boss => {
+    const next = nextReset(boss, now);
+    const seconds = Math.ceil((next - now) / 1000);
+    const minutes = String(Math.floor(seconds / 60)).padStart(2,"0");
+    const remainder = String(seconds % 60).padStart(2,"0");
+    boss.elements.count.textContent = minutes + ":" + remainder;
+    boss.elements.detail.textContent =
+      "다음 리셋 " + formatTime(next) + " · 20분 간격";
+    boss.elements.card.classList.toggle("soon", seconds <= 60);
+  });
+}
+
+$("form").onsubmit = event => {
+  event.preventDefault();
+  const name = $("name").value.trim();
+  const start = new Date($("start").value).getTime();
+  if (!name || !Number.isFinite(start)) {
+    $("message").textContent = "보스 이름과 리셋 시간을 확인해주세요.";
+    return;
+  }
+
+  bosses.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    name,
+    start,
+    added: Date.now()
+  });
+  save();
+  render();
+  updateDisplay();
+  $("name").value = "";
+};
+
+function tick() {
+  const now = Date.now();
+  if (now < lastTick) lastTick = now;
+
+  bosses.forEach(boss => {
+    // 오래 멈췄다가 돌아온 경우 최근 90초의 알림만 처리합니다.
+    const since = Math.max(lastTick, now - 90000, boss.added || 0);
+    [60000, 0].forEach(offset => {
+      const firstEvent = boss.start - offset;
+      const cycle = Math.floor((now - firstEvent) / PERIOD);
+      if (cycle < 0) return;
+
+      const eventTime = firstEvent + cycle * PERIOD;
+      const key = boss.id + ":" + offset + ":" + cycle;
+
+      if (eventTime > since && eventTime <= now && !fired.has(key)) {
+        fired.add(key);
+        announce(boss, offset === 60000, eventTime, now);
+      }
+    });
+  });
+
+  lastTick = now;
+  if (fired.size > 1000) fired.clear();
+  updateDisplay();
+}
+
+// 画面要素は保存せず、設定だけを保存します。
+save = function() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(
+      bosses.map(({id,name,start,added}) => ({id,name,start,added}))
+    ));
+  } catch {
+    $("message").textContent = "設定を保存できません。ブラウザの保存設定を確認してください。";
+  }
+};
+
+render();
+updateDisplay();
+setInterval(tick, 250);
+document.addEventListener("visibilitychange", tick);
+</script>
+</body>
+</html>
