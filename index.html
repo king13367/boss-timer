@@ -3,19 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>보스 리셋 타이머</title>
+<title>보스 리셋 타이머 | 글루딘 헨</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101522;color:#eef2ff;font-family:Arial,sans-serif}
+body{
+  margin:0;
+  background:#101522;
+  color:#eef2ff;
+  font-family:Arial,sans-serif
+}
 main{max-width:900px;margin:28px auto;padding:18px}
 h1{font-size:26px;margin:0 0 10px}
 p,small{color:#aab5ce;line-height:1.6}
-.panel,.boss{background:#1b2335;border:1px solid #303c55;border-radius:14px;padding:18px;margin:16px 0}
-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.creator{margin:0 0 12px;color:#8eabff;font-size:14px}
+.counter{margin:12px 0}
+.counter img{max-width:100%;height:auto}
+.panel,.boss{
+  background:#1b2335;
+  border:1px solid #303c55;
+  border-radius:14px;
+  padding:18px;
+  margin:16px 0
+}
+form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px
+}
 label{display:block;color:#bdc8df;font-size:14px}
-input,select,button{font:inherit;border-radius:8px;padding:11px}
-input,select{width:100%;margin-top:7px;background:#111827;color:white;border:1px solid #42506b}
-button{border:0;background:#8eabff;color:#101522;cursor:pointer;font-weight:bold}
+input,select,button{
+  font:inherit;
+  border-radius:8px;
+  padding:11px
+}
+input,select{
+  width:100%;
+  margin-top:7px;
+  background:#111827;
+  color:white;
+  border:1px solid #42506b
+}
+button{
+  border:0;
+  background:#8eabff;
+  color:#101522;
+  cursor:pointer;
+  font-weight:bold
+}
 button:hover{filter:brightness(1.1)}
 .tools{display:flex;flex-wrap:wrap;gap:9px}
 .secondary{background:#33415e;color:white}
@@ -24,27 +58,43 @@ button:hover{filter:brightness(1.1)}
 .time-row{display:flex;gap:8px;align-items:center}
 .time-row input{flex:1;min-width:0}
 .time-row button{margin-top:7px;white-space:nowrap}
-.boss-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.boss-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px
+}
 h2{margin:0;font-size:19px;overflow-wrap:anywhere}
-.count{font-size:44px;font-weight:bold;color:#9bb4ff;margin:12px 0;font-variant-numeric:tabular-nums}
+.count{
+  font-size:44px;
+  font-weight:bold;
+  color:#9bb4ff;
+  margin:12px 0;
+  font-variant-numeric:tabular-nums
+}
 .soon .count{color:#ffd275}
 #message{color:#ffd275;line-height:1.6}
 #clock{font-variant-numeric:tabular-nums}
 #log{padding-left:20px;color:#bdc8df;line-height:1.8}
 @media(max-width:650px){
-form{grid-template-columns:1fr}
-main{margin:10px auto}
-.time-row{flex-wrap:wrap}
-.time-row input{flex-basis:100%}
+  form{grid-template-columns:1fr}
+  main{margin:10px auto}
+  .time-row{flex-wrap:wrap}
+  .time-row input{flex-basis:100%}
 }
 </style>
 </head>
 <body>
 <main>
 <h1>🔔 보스 리셋 타이머</h1>
-  <p style="margin:0 0 14px;color:#8eabff;font-size:14px">
-  제작자_글루딘_헨
-</p>
+<p class="creator">제작자_글루딘_헨</p>
+
+<div class="counter">
+<img
+  src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fking13367.github.io%2Fboss-timer%2F&amp;label=%EC%98%A4%EB%8A%98+%2F+%EB%88%84%EC%A0%81+%EC%A0%91%EC%86%8D&amp;icon=bar-chart-fill&amp;color=%230d6efd&amp;message=&amp;style=flat&amp;tz=Asia%2FSeoul"
+  alt="오늘 / 누적 접속 카운터">
+</div>
+
 <p>보스마다 10분~4시간 주기를 따로 설정하세요.</p>
 <p id="clock"></p>
 
@@ -55,12 +105,15 @@ main{margin:10px auto}
 <button id="notify" class="secondary" type="button">브라우저 알림 허용</button>
 <button id="pip" class="secondary" type="button">작은 창 보기 (PiP)</button>
 </div>
+
 <p id="status">소리 알람 꺼짐 · 알람 켜기 버튼을 눌러주세요.</p>
+
 <small>
 페이지를 열어두어야 작동합니다.
 PC 절전·탭 종료 시 알람이 울리지 않으며,
 백그라운드에서는 알림이 늦어질 수 있습니다.
-설정은 현재 브라우저에만 저장됩니다.
+타이머 설정은 현재 브라우저에만 저장됩니다.
+접속 카운터는 외부 서비스로 집계하며 실제 사람 수와 다를 수 있습니다.
 </small>
 </div>
 
@@ -103,6 +156,7 @@ PC 절전·탭 종료 시 알람이 울리지 않으며,
 
 const $ = id => document.getElementById(id);
 const KEY = "boss-reset-timers-v1";
+
 let bosses = [];
 let soundOn = false;
 let audioContext = null;
@@ -112,6 +166,7 @@ let lastTick = Date.now();
 let lastDisplaySecond = -1;
 let mainRows = new Map();
 let pipRows = new Map();
+
 const logs = [];
 const fired = new Map();
 
@@ -125,6 +180,7 @@ function periodLabel(value) {
   const n = periodMinutes(value);
   const hours = Math.floor(n / 60);
   const minutes = n % 60;
+
   return (hours ? hours + "시간" : "") +
     (hours && minutes ? " " : "") +
     (minutes ? minutes + "분" : "");
@@ -140,14 +196,20 @@ for (let minutes = 10; minutes <= 240; minutes += 10) {
 
 try {
   const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
+
   if (Array.isArray(saved)) {
     const ids = new Set();
+
     bosses = saved.filter(b => {
-      if (!b || typeof b.id !== "string" ||
+      if (!b ||
+          typeof b.id !== "string" ||
           typeof b.name !== "string" ||
           !Number.isFinite(b.start) ||
           !Number.isFinite(new Date(b.start).getTime()) ||
-          ids.has(b.id)) return false;
+          ids.has(b.id)) {
+        return false;
+      }
+
       ids.add(b.id);
       return true;
     }).map(b => ({
@@ -176,6 +238,7 @@ function save() {
 
 function localInputTime(date) {
   const pad = n => String(n).padStart(2, "0");
+
   return date.getFullYear() + "-" +
     pad(date.getMonth() + 1) + "-" +
     pad(date.getDate()) + "T" +
@@ -187,8 +250,7 @@ function localInputTime(date) {
 $("start").value = localInputTime(new Date());
 
 $("useNow").onclick = () => {
-  const now = new Date();
-  $("start").value = localInputTime(now);
+  $("start").value = localInputTime(new Date());
   $("message").textContent =
     "현재시간을 입력했습니다. 주기를 선택하고 등록해주세요.";
 };
@@ -210,7 +272,9 @@ function periodMs(boss) {
 
 function nextReset(boss, now) {
   if (now < boss.start) return boss.start;
+
   const period = periodMs(boss);
+
   return boss.start +
     (Math.floor((now - boss.start) / period) + 1) * period;
 }
@@ -227,22 +291,28 @@ function countdown(ms) {
 }
 
 function beep(ready) {
-  if (!soundOn || !audioContext ||
-      audioContext.state !== "running") return;
+  if (!soundOn ||
+      !audioContext ||
+      audioContext.state !== "running") {
+    return;
+  }
 
   const count = ready ? 2 : 4;
+
   for (let i = 0; i < count; i++) {
     const start = audioContext.currentTime + i * 0.3;
     const oscillator = audioContext.createOscillator();
     const gain = audioContext.createGain();
 
     oscillator.frequency.value = ready ? 660 : 880;
+
     gain.gain.setValueAtTime(0, start);
     gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
 
     oscillator.connect(gain);
     gain.connect(audioContext.destination);
+
     oscillator.start(start);
     oscillator.stop(start + 0.25);
   }
@@ -252,6 +322,7 @@ $("enable").onclick = async () => {
   try {
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!Audio) throw new Error("unsupported");
+
     if (!audioContext) audioContext = new Audio();
 
     await audioContext.resume();
@@ -275,12 +346,14 @@ $("mute").onclick = () => {
 
 $("notify").onclick = async () => {
   if (!("Notification" in window)) {
-    $("message").textContent = "이 브라우저는 알림을 지원하지 않습니다.";
+    $("message").textContent =
+      "이 브라우저는 알림을 지원하지 않습니다.";
     return;
   }
 
   try {
     const permission = await Notification.requestPermission();
+
     $("message").textContent = permission === "granted"
       ? "브라우저 알림이 허용되었습니다."
       : "알림이 허용되지 않았습니다. 사이트 권한 설정을 확인해주세요.";
@@ -311,6 +384,7 @@ function announce(boss, ready, eventTime, now) {
   logs.splice(10);
 
   $("log").replaceChildren();
+
   logs.forEach(text => {
     const li = document.createElement("li");
     li.textContent = text;
@@ -321,6 +395,7 @@ function announce(boss, ready, eventTime, now) {
 function buildList(container, compact) {
   const doc = container.ownerDocument;
   const rows = new Map();
+
   container.replaceChildren();
 
   if (!bosses.length) {
@@ -346,11 +421,13 @@ function buildList(container, compact) {
       remove.type = "button";
       remove.className = "danger";
       remove.textContent = "삭제";
+
       remove.onclick = () => {
         bosses = bosses.filter(b => b.id !== boss.id);
         save();
         rebuild();
       };
+
       header.append(remove);
     }
 
@@ -358,6 +435,7 @@ function buildList(container, compact) {
     count.className = "count";
 
     const detail = doc.createElement("small");
+
     card.append(header, count, detail);
     container.append(card);
 
@@ -371,10 +449,14 @@ function updateRows(rows, now) {
   bosses.forEach(boss => {
     const row = rows.get(boss.id);
     if (!row) return;
+
     const next = nextReset(boss, now);
+
     row.count.textContent = countdown(next - now);
-    row.detail.textContent = "다음 " + formatTime(next) +
+    row.detail.textContent =
+      "다음 " + formatTime(next) +
       " · " + periodLabel(boss.minutes) + " 주기";
+
     row.card.classList.toggle("soon", next - now <= 60000);
   });
 }
@@ -382,17 +464,21 @@ function updateRows(rows, now) {
 function updateDisplay(now = Date.now()) {
   $("clock").textContent = "현재시간 · " + formatTime(now);
   updateRows(mainRows, now);
+
   if (pipWindow && !pipWindow.closed) {
     updateRows(pipRows, now);
   }
+
   lastDisplaySecond = Math.floor(now / 1000);
 }
 
 function rebuild() {
   mainRows = buildList($("list"), false);
+
   if (pipWindow && !pipWindow.closed && pipList) {
     pipRows = buildList(pipList, true);
   }
+
   updateDisplay();
 }
 
@@ -427,6 +513,7 @@ $("form").onsubmit = event => {
 
 function tick() {
   const now = Date.now();
+
   if (now < lastTick) lastTick = now;
 
   bosses.forEach(boss => {
@@ -436,12 +523,15 @@ function tick() {
       const firstEvent = boss.start - offset;
       const period = periodMs(boss);
       const cycle = Math.floor((now - firstEvent) / period);
+
       if (cycle < 0) return;
 
       const eventTime = firstEvent + cycle * period;
       const key = boss.id + ":" + offset + ":" + cycle;
 
-      if (eventTime > since && eventTime <= now && !fired.has(key)) {
+      if (eventTime > since &&
+          eventTime <= now &&
+          !fired.has(key)) {
         fired.set(key, now);
         announce(boss, offset === 60000, eventTime, now);
       }
@@ -453,6 +543,7 @@ function tick() {
   }
 
   lastTick = now;
+
   if (Math.floor(now / 1000) !== lastDisplaySecond) {
     updateDisplay(now);
   }
@@ -471,43 +562,75 @@ $("pip").onclick = async () => {
   }
 
   try {
-    const win = await window.documentPictureInPicture.requestWindow({
-      width: 360,
-      height: 220
-    });
+    const win =
+      await window.documentPictureInPicture.requestWindow({
+        width: 360,
+        height: 220
+      });
 
     pipWindow = win;
+
     const doc = win.document;
     doc.documentElement.lang = "ko";
     doc.title = "보스 타이머";
 
     const style = doc.createElement("style");
+
     style.textContent = `
       *{box-sizing:border-box}
       body{
-        margin:0;padding:10px;background:#101522;
-        color:#eef2ff;font-family:Arial,sans-serif
+        margin:0;
+        padding:10px;
+        background:#101522;
+        color:#eef2ff;
+        font-family:Arial,sans-serif
       }
-      h1{font-size:15px;margin:0 0 8px}
+      h1{font-size:15px;margin:0 0 4px}
+      .creator{
+        font-size:11px;
+        color:#8eabff;
+        margin:0 0 8px
+      }
       .boss{
-        background:#1b2335;border:1px solid #303c55;
-        border-radius:10px;padding:10px;margin:0 0 8px
+        background:#1b2335;
+        border:1px solid #303c55;
+        border-radius:10px;
+        padding:10px;
+        margin:0 0 8px
       }
-      h2{font-size:16px;margin:0;overflow-wrap:anywhere}
+      h2{
+        font-size:16px;
+        margin:0;
+        overflow-wrap:anywhere
+      }
       .count{
-        font-size:32px;font-weight:bold;color:#9bb4ff;
-        margin:5px 0;font-variant-numeric:tabular-nums
+        font-size:32px;
+        font-weight:bold;
+        color:#9bb4ff;
+        margin:5px 0;
+        font-variant-numeric:tabular-nums
       }
       .soon .count{color:#ffd275}
-      small{font-size:11px;color:#aab5ce;line-height:1.5}
+      small{
+        font-size:11px;
+        color:#aab5ce;
+        line-height:1.5
+      }
       p{color:#aab5ce}
     `;
+
     doc.head.append(style);
 
     const title = doc.createElement("h1");
     title.textContent = "🔔 보스 리셋 타이머";
+
+    const creator = doc.createElement("p");
+    creator.className = "creator";
+    creator.textContent = "제작자_글루딘_헨";
+
     pipList = doc.createElement("div");
-    doc.body.append(title, pipList);
+
+    doc.body.append(title, creator, pipList);
     pipRows = buildList(pipList, true);
 
     win.addEventListener("pagehide", () => {
