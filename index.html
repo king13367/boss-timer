@@ -10,10 +10,11 @@ body{
   margin:0;
   background:#101522;
   color:#eef2ff;
-  font-family:Arial,sans-serif
+  font-family:Arial,sans-serif;
 }
 main{max-width:900px;margin:28px auto;padding:18px}
 h1{font-size:26px;margin:0 0 10px}
+h2{margin:0;font-size:19px;overflow-wrap:anywhere}
 p,small{color:#aab5ce;line-height:1.6}
 .creator{margin:0 0 12px;color:#8eabff;font-size:14px}
 .counter{margin:12px 0}
@@ -23,34 +24,38 @@ p,small{color:#aab5ce;line-height:1.6}
   border:1px solid #303c55;
   border-radius:14px;
   padding:18px;
-  margin:16px 0
+  margin:16px 0;
 }
 form{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:14px
+  gap:14px;
 }
 label{display:block;color:#bdc8df;font-size:14px}
 input,select,button{
   font:inherit;
   border-radius:8px;
-  padding:11px
+  padding:11px;
 }
 input,select{
   width:100%;
   margin-top:7px;
   background:#111827;
   color:white;
-  border:1px solid #42506b
+  border:1px solid #42506b;
 }
 button{
   border:0;
   background:#8eabff;
   color:#101522;
   cursor:pointer;
-  font-weight:bold
+  font-weight:bold;
 }
-button:hover{filter:brightness(1.1)}
+button:hover,.market-link:hover{filter:brightness(1.1)}
+button:focus-visible,a:focus-visible{
+  outline:3px solid #ffd275;
+  outline-offset:3px;
+}
 .tools{display:flex;flex-wrap:wrap;gap:9px}
 .secondary{background:#33415e;color:white}
 .danger{background:#593441;color:#ffccd6}
@@ -62,20 +67,30 @@ button:hover{filter:brightness(1.1)}
   display:flex;
   justify-content:space-between;
   align-items:center;
-  gap:10px
+  gap:10px;
 }
-h2{margin:0;font-size:19px;overflow-wrap:anywhere}
 .count{
   font-size:44px;
   font-weight:bold;
   color:#9bb4ff;
   margin:12px 0;
-  font-variant-numeric:tabular-nums
+  font-variant-numeric:tabular-nums;
 }
 .soon .count{color:#ffd275}
 #message{color:#ffd275;line-height:1.6}
 #clock{font-variant-numeric:tabular-nums}
 #log{padding-left:20px;color:#bdc8df;line-height:1.8}
+.market-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:12px 18px;
+  border-radius:9px;
+  color:#101522;
+  font-weight:bold;
+  text-decoration:none;
+}
+.market-note{margin-bottom:0;font-size:12px}
 @media(max-width:650px){
   form{grid-template-columns:1fr}
   main{margin:10px auto}
@@ -84,6 +99,7 @@ h2{margin:0;font-size:19px;overflow-wrap:anywhere}
 }
 </style>
 </head>
+
 <body>
 <main>
 <h1>🔔 보스 리셋 타이머</h1>
@@ -99,55 +115,104 @@ h2{margin:0;font-size:19px;overflow-wrap:anywhere}
 <p id="clock"></p>
 
 <div class="panel">
-<div class="tools">
-<button id="enable" type="button">알람 켜기 / 테스트</button>
-<button id="mute" class="secondary" type="button">소리 끄기</button>
-<button id="notify" class="secondary" type="button">브라우저 알림 허용</button>
-<button id="pip" class="secondary" type="button">작은 창 보기 (PiP)</button>
-</div>
+  <div class="tools">
+    <button id="enable" type="button">알람 켜기 / 테스트</button>
+    <button id="mute" class="secondary" type="button">소리 끄기</button>
+    <button id="notify" class="secondary" type="button">브라우저 알림 허용</button>
+    <button id="pip" class="secondary" type="button">작은 창 보기 (PiP)</button>
+  </div>
 
-<p id="status">소리 알람 꺼짐 · 알람 켜기 버튼을 눌러주세요.</p>
+  <p id="status">소리 알람 꺼짐 · 알람 켜기 버튼을 눌러주세요.</p>
 
-<small>
-페이지를 열어두어야 작동합니다.
-PC 절전·탭 종료 시 알람이 울리지 않으며,
-백그라운드에서는 알림이 늦어질 수 있습니다.
-타이머 설정은 현재 브라우저에만 저장됩니다.
-접속 카운터는 외부 서비스로 집계하며 실제 사람 수와 다를 수 있습니다.
-</small>
+  <small>
+    페이지를 열어두어야 작동합니다.
+    PC 절전·탭 종료 시 알람이 울리지 않으며,
+    백그라운드에서는 알림이 늦어질 수 있습니다.
+    타이머 설정은 현재 브라우저에만 저장됩니다.
+    접속 카운터는 외부 서비스로 집계하며 실제 사람 수와 다를 수 있습니다.
+  </small>
 </div>
 
 <form id="form" class="panel">
-<label>보스 이름
-<input id="name" placeholder="예: 오르비스 하층" maxlength="40" required>
-</label>
+  <label>보스 이름
+    <input id="name"
+      placeholder="예: 오르비스 하층"
+      maxlength="40" required>
+  </label>
 
-<label>첫 리셋 날짜와 시간
-<div class="time-row">
-<input id="start" type="datetime-local" step="1" required>
-<button id="useNow" type="button">현재시간 불러오기</button>
-</div>
-</label>
+  <label>첫 리셋 날짜와 시간
+    <div class="time-row">
+      <input id="start"
+        type="datetime-local"
+        step="1" required>
+      <button id="useNow" type="button">현재시간 불러오기</button>
+    </div>
+  </label>
 
-<label>리셋 주기
-<select id="period"></select>
-</label>
+  <label>리셋 주기
+    <select id="period"></select>
+  </label>
 
-<button type="submit">보스 타이머 등록</button>
+  <button type="submit">보스 타이머 등록</button>
 
-<small class="wide">
-현재시간 불러오기는 버튼을 누른 순간의 기기 시간을 입력합니다.
-현재시간을 불러오고 20분 주기로 등록하면 20분 뒤가 다음 리셋입니다.
-과거 시간을 입력해도 해당 시각부터 선택한 주기로 계산합니다.
-</small>
+  <small class="wide">
+    현재시간 불러오기는 버튼을 누른 순간의 기기 시간을 입력합니다.
+    현재시간을 불러오고 20분 주기로 등록하면 20분 뒤가 다음 리셋입니다.
+    과거 시간을 입력해도 해당 시각부터 선택한 주기로 계산합니다.
+  </small>
 </form>
 
 <p id="message" role="status"></p>
+
 <div id="list"></div>
 
 <div class="panel">
-<strong>최근 알림</strong>
-<ul id="log"><li>아직 알림이 없습니다.</li></ul>
+  <h2>💰 엘코인 시세 확인</h2>
+
+  <p>
+    거래소 버튼을 누르면 판매 목록이 새 탭으로 열립니다.
+    글루딘 서버의 ‘엘코·엘코인’ 판매글을 확인해주세요.
+  </p>
+
+  <div class="tools">
+    <a
+      class="market-link"
+      style="background:#ff738b"
+      href="https://www.barotem.com/product/lists/2382r372"
+      target="_blank"
+      rel="noopener noreferrer">
+      바로템 ↗
+    </a>
+
+    <a
+      class="market-link"
+      style="background:#69a7ff"
+      href="https://www.itemmania.com/sell/list_search.html?search_game=129"
+      target="_blank"
+      rel="noopener noreferrer">
+      아이템매니아 ↗
+    </a>
+
+    <a
+      class="market-link"
+      style="background:#70d8ad"
+      href="https://www.itembay.com/item/sell/game-210/server-16806/type-4"
+      target="_blank"
+      rel="noopener noreferrer">
+      아이템베이 ↗
+    </a>
+  </div>
+
+  <p class="market-note">
+    가격은 각 거래소에서 직접 확인합니다.
+    수량·판매 단위와 거래완료 여부를 확인해주세요.
+    접속 후 글루딘 서버 및 판매 조건을 다시 선택해야 할 수 있습니다.
+  </p>
+</div>
+
+<div class="panel">
+  <strong>최근 알림</strong>
+  <ul id="log"><li>아직 알림이 없습니다.</li></ul>
 </div>
 </main>
 
@@ -173,7 +238,9 @@ const fired = new Map();
 function periodMinutes(value) {
   const n = Number(value);
   return Number.isInteger(n) &&
-    n >= 10 && n <= 240 && n % 10 === 0 ? n : 20;
+    n >= 10 &&
+    n <= 240 &&
+    n % 10 === 0 ? n : 20;
 }
 
 function periodLabel(value) {
@@ -251,6 +318,7 @@ $("start").value = localInputTime(new Date());
 
 $("useNow").onclick = () => {
   $("start").value = localInputTime(new Date());
+
   $("message").textContent =
     "현재시간을 입력했습니다. 주기를 선택하고 등록해주세요.";
 };
@@ -286,7 +354,8 @@ function countdown(ms) {
   const hours = Math.floor(total / 3600);
 
   return hours
-    ? hours + ":" + String(minutes).padStart(2, "0") + ":" + seconds
+    ? hours + ":" +
+      String(minutes).padStart(2, "0") + ":" + seconds
     : String(minutes).padStart(2, "0") + ":" + seconds;
 }
 
@@ -308,7 +377,9 @@ function beep(ready) {
 
     gain.gain.setValueAtTime(0, start);
     gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001, start + 0.22
+    );
 
     oscillator.connect(gain);
     gain.connect(audioContext.destination);
@@ -320,9 +391,10 @@ function beep(ready) {
 
 $("enable").onclick = async () => {
   try {
-    const Audio = window.AudioContext || window.webkitAudioContext;
-    if (!Audio) throw new Error("unsupported");
+    const Audio =
+      window.AudioContext || window.webkitAudioContext;
 
+    if (!Audio) throw new Error("unsupported");
     if (!audioContext) audioContext = new Audio();
 
     await audioContext.resume();
@@ -352,13 +424,15 @@ $("notify").onclick = async () => {
   }
 
   try {
-    const permission = await Notification.requestPermission();
+    const permission =
+      await Notification.requestPermission();
 
     $("message").textContent = permission === "granted"
       ? "브라우저 알림이 허용되었습니다."
       : "알림이 허용되지 않았습니다. 사이트 권한 설정을 확인해주세요.";
   } catch {
-    $("message").textContent = "브라우저 알림을 켜지 못했습니다.";
+    $("message").textContent =
+      "브라우저 알림을 켜지 못했습니다.";
   }
 };
 
@@ -453,16 +527,21 @@ function updateRows(rows, now) {
     const next = nextReset(boss, now);
 
     row.count.textContent = countdown(next - now);
+
     row.detail.textContent =
       "다음 " + formatTime(next) +
       " · " + periodLabel(boss.minutes) + " 주기";
 
-    row.card.classList.toggle("soon", next - now <= 60000);
+    row.card.classList.toggle(
+      "soon", next - now <= 60000
+    );
   });
 }
 
 function updateDisplay(now = Date.now()) {
-  $("clock").textContent = "현재시간 · " + formatTime(now);
+  $("clock").textContent =
+    "현재시간 · " + formatTime(now);
+
   updateRows(mainRows, now);
 
   if (pipWindow && !pipWindow.closed) {
@@ -489,14 +568,16 @@ $("form").onsubmit = event => {
   const start = new Date($("start").value).getTime();
 
   if (!name || !Number.isFinite(start)) {
-    $("message").textContent = "보스 이름과 시간을 확인해주세요.";
+    $("message").textContent =
+      "보스 이름과 시간을 확인해주세요.";
     return;
   }
 
   const now = Date.now();
 
   bosses.push({
-    id: now.toString(36) + Math.random().toString(36).slice(2),
+    id: now.toString(36) +
+      Math.random().toString(36).slice(2),
     name,
     start,
     minutes: periodMinutes($("period").value),
@@ -504,7 +585,8 @@ $("form").onsubmit = event => {
   });
 
   if (save()) {
-    $("message").textContent = name + " 타이머를 등록했습니다.";
+    $("message").textContent =
+      name + " 타이머를 등록했습니다.";
   }
 
   $("name").value = "";
@@ -517,23 +599,30 @@ function tick() {
   if (now < lastTick) lastTick = now;
 
   bosses.forEach(boss => {
-    const since = Math.max(lastTick, now - 90000, boss.added);
+    const since = Math.max(
+      lastTick, now - 90000, boss.added
+    );
 
     [60000, 0].forEach(offset => {
       const firstEvent = boss.start - offset;
       const period = periodMs(boss);
-      const cycle = Math.floor((now - firstEvent) / period);
+      const cycle = Math.floor(
+        (now - firstEvent) / period
+      );
 
       if (cycle < 0) return;
 
       const eventTime = firstEvent + cycle * period;
-      const key = boss.id + ":" + offset + ":" + cycle;
+      const key =
+        boss.id + ":" + offset + ":" + cycle;
 
       if (eventTime > since &&
           eventTime <= now &&
           !fired.has(key)) {
         fired.set(key, now);
-        announce(boss, offset === 60000, eventTime, now);
+        announce(
+          boss, offset === 60000, eventTime, now
+        );
       }
     });
   });
@@ -583,38 +672,38 @@ $("pip").onclick = async () => {
         padding:10px;
         background:#101522;
         color:#eef2ff;
-        font-family:Arial,sans-serif
+        font-family:Arial,sans-serif;
       }
       h1{font-size:15px;margin:0 0 4px}
       .creator{
         font-size:11px;
         color:#8eabff;
-        margin:0 0 8px
+        margin:0 0 8px;
       }
       .boss{
         background:#1b2335;
         border:1px solid #303c55;
         border-radius:10px;
         padding:10px;
-        margin:0 0 8px
+        margin:0 0 8px;
       }
       h2{
         font-size:16px;
         margin:0;
-        overflow-wrap:anywhere
+        overflow-wrap:anywhere;
       }
       .count{
         font-size:32px;
         font-weight:bold;
         color:#9bb4ff;
         margin:5px 0;
-        font-variant-numeric:tabular-nums
+        font-variant-numeric:tabular-nums;
       }
       .soon .count{color:#ffd275}
       small{
         font-size:11px;
         color:#aab5ce;
-        line-height:1.5
+        line-height:1.5;
       }
       p{color:#aab5ce}
     `;
