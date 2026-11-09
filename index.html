@@ -5,91 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>보스 리셋 타이머 | 글루딘 헨</title>
 <style>
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: #101522;
-  color: #eef2ff;
-  font-family: Arial, sans-serif;
-}
-main { max-width: 900px; margin: 28px auto; padding: 18px; }
-h1 { font-size: 26px; margin: 0 0 10px; }
-h2 { font-size: 19px; margin: 0; overflow-wrap: anywhere; }
-p, small { color: #aab5ce; line-height: 1.6; }
-.creator { margin: 0 0 12px; color: #8eabff; font-size: 14px; }
-.counter { margin: 12px 0; }
-.counter img { max-width: 100%; height: auto; }
-.panel, .boss {
-  background: #1b2335;
-  border: 1px solid #303c55;
-  border-radius: 14px;
-  padding: 18px;
-  margin: 16px 0;
-}
-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-label { display: block; color: #bdc8df; font-size: 14px; }
-input, select, button { font: inherit; border-radius: 8px; padding: 11px; }
-input, select {
-  width: 100%;
-  margin-top: 7px;
-  background: #111827;
-  color: white;
-  border: 1px solid #42506b;
-}
-button, .link-button {
-  border: 0;
-  background: #8eabff;
-  color: #101522;
-  cursor: pointer;
-  font-weight: bold;
-}
-button:hover, .link-button:hover { filter: brightness(1.1); }
-button:focus-visible, a:focus-visible {
-  outline: 3px solid #ffd275;
-  outline-offset: 3px;
-}
-.tools { display: flex; flex-wrap: wrap; gap: 9px; }
-.secondary { background: #33415e; color: white; }
-.danger { background: #593441; color: #ffccd6; }
-.wide { grid-column: 1 / -1; }
-.time-row { display: flex; align-items: center; gap: 8px; }
-.time-row input { flex: 1; min-width: 0; }
-.time-row button { margin-top: 7px; white-space: nowrap; }
-.boss-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.count {
-  font-size: 44px;
-  font-weight: bold;
-  color: #9bb4ff;
-  margin: 12px 0;
-  font-variant-numeric: tabular-nums;
-}
-.soon .count { color: #ffd275; }
-#message { color: #ffd275; line-height: 1.6; }
-#clock { font-variant-numeric: tabular-nums; }
-#log { padding-left: 20px; color: #bdc8df; line-height: 1.8; }
-.link-button {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 18px;
-  border-radius: 9px;
-  text-decoration: none;
-}
-.official-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
-.official-grid .panel { margin: 0; }
-.notice-button { background: #9bb4ff; }
-.event-button { background: #d8b4fe; }
-.barotem-button { background: #ff738b; }
-.mania-button { background: #69a7ff; }
-.bay-button { background: #70d8ad; }
-.compare-panel { border-color: #62513c; }
-.compare-button { background: #f0cb85; }
-.note { margin-bottom: 0; font-size: 12px; }
-@media (max-width: 650px) {
-  form, .official-grid { grid-template-columns: 1fr; }
-  main { margin: 10px auto; }
-  .time-row { flex-wrap: wrap; }
-  .time-row input { flex-basis: 100%; }
-}
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #101522;
+    color: #eef2ff;
+    font-family: Arial, sans-serif;
+  }
+  main { max-width: 900px; margin: 28px auto; padding: 18px; }
+  h1 { font-size: 26px; margin: 0 0 10px; }
+  h2 { font-size: 19px; margin: 0; overflow-wrap: anywhere; }
+  p, small { color: #aab5ce; line-height: 1.6; }
+  .creator { margin: 0 0 12px; color: #8eabff; font-size: 14px; }
+  .counter { margin: 12px 0; }
+  .counter img { max-width: 100%; height: auto; }
+  .panel, .boss {
+    background: #1b2335;
+    border: 1px solid #303c55;
+    border-radius: 14px;
+    padding: 18px;
+    margin: 16px 0;
+  }
+  form, .official-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .official-grid { margin: 16px 0; }
+  .official-grid .panel { margin: 0; }
+  label { display: block; color: #bdc8df; font-size: 14px; }
+  input, select, button {
+    font: inherit;
+    border-radius: 8px;
+    padding: 11px;
+  }
+  input, select {
+    width: 100%;
+    margin-top: 7px;
+    background: #111827;
+    color: white;
+    border: 1px solid #42506b;
+  }
+  button, .link-button {
+    border: 0;
+    background: #8eabff;
+    color: #101522;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  button:hover, .link-button:hover { filter: brightness(1.1); }
+  button:focus-visible, a:focus-visible {
+    outline: 3px solid #ffd275;
+    outline-offset: 3px;
+  }
+  .tools { display: flex; flex-wrap: wrap; gap: 9px; }
+  .secondary { background: #33415e; color: white; }
+  .danger { background: #593441; color: #ffccd6; }
+  .wide { grid-column: 1 / -1; }
+  .time-row { display: flex; align-items: center; gap: 8px; }
+  .time-row input { flex: 1; min-width: 0; }
+  .time-row button { margin-top: 7px; white-space: nowrap; }
+  .boss-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .count {
+    font-size: 44px;
+    font-weight: bold;
+    color: #9bb4ff;
+    margin: 12px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .soon .count { color: #ffd275; }
+  #message { color: #ffd275; line-height: 1.6; }
+  #clock { font-variant-numeric: tabular-nums; }
+  #log { padding-left: 20px; color: #bdc8df; line-height: 1.8; }
+  .link-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 18px;
+    border-radius: 9px;
+    text-decoration: none;
+  }
+  .notice-button { background: #9bb4ff; }
+  .event-button { background: #d8b4fe; }
+  .barotem-button { background: #ff738b; }
+  .mania-button { background: #69a7ff; }
+  .bay-button { background: #70d8ad; }
+  .compare-panel { border-color: #62513c; }
+  .compare-button { background: #f0cb85; }
+  .note { margin-bottom: 0; font-size: 12px; }
+  @media (max-width: 650px) {
+    form, .official-grid { grid-template-columns: 1fr; }
+    main { margin: 10px auto; }
+    .time-row { flex-wrap: wrap; }
+    .time-row input { flex-basis: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -196,10 +209,10 @@ button:focus-visible, a:focus-visible {
     <div class="tools">
       <a class="link-button compare-button"
         href="https://6sword.com/l2/dungeons"
-        target="_blank" rel="noopener noreferrer">던전 목록 (6sword) ↗</a>
+        target="_blank" rel="noopener noreferrer">리니지2 정보 사이트1</a>
       <a class="link-button compare-button"
         href="https://items.gamess.co.kr/games/lineage2"
-        target="_blank" rel="noopener noreferrer">아이템 목록 (Gamess) ↗</a>
+        target="_blank" rel="noopener noreferrer">리니지2 정보 사이트2</a>
     </div>
   </section>
 </main>
@@ -488,6 +501,7 @@ $("form").onsubmit = event => {
   event.preventDefault();
   const name = $("name").value.trim();
   const start = new Date($("start").value).getTime();
+
   if (!name || !Number.isFinite(start)) {
     $("message").textContent = "보스 이름과 시간을 확인해주세요.";
     return;
@@ -522,6 +536,7 @@ function tick() {
 
       const eventTime = firstEvent + cycle * period;
       const key = boss.id + ":" + offset + ":" + cycle;
+
       if (eventTime > since && eventTime <= now && !fired.has(key)) {
         fired.set(key, now);
         announce(boss, offset === 60000, eventTime, now);
@@ -594,6 +609,7 @@ $("pip").onclick = async () => {
 
     const title = doc.createElement("h1");
     title.textContent = "🔔 보스 리셋 타이머";
+
     const creator = doc.createElement("p");
     creator.className = "creator";
     creator.textContent = CREATOR;
